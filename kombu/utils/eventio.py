@@ -25,7 +25,10 @@ class _epoll(object):
             pass
 
     def poll(self, timeout):
-        return self._epoll.poll(timeout and timeout / 1000.0 or -1)
+        print("+EPOLL %r" % (timeout, ))
+        events = self._epoll.poll(timeout and timeout / 1000.0 or -1)
+        print("-EPOLL %r" % (timeout, ))
+        return events
 
 
 class _kqueue(object):
@@ -50,8 +53,10 @@ class _kqueue(object):
                                                 flags=flags)], 0)
 
     def poll(self, timeout):
-        kevents = self._kqueue.control(None, 1000,
-                                      timeout and timeout / 1000.0 or timeout)
+        print("+POLL: %r" % (timeout, ))
+        kevents = self._kqueue.control(None, 1,
+                                       timeout and timeout / 1000.0 or timeout)
+        print("-POLL")
         events = {}
         for kevent in kevents:
             fd = kevent.ident

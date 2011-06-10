@@ -108,12 +108,17 @@ class MultiChannelPoller(object):
                 self._register_LISTEN(channel)
 
         events = self._poller.poll(timeout and timeout * 1000 or None)
+        print("EVENTS: %r" % (events, ))
         for fileno, event in events:
             if event & eventio.POLL_READ:
+                print("POLL READ")
                 chan, type = self._fd_to_chan[fileno]
+                print("CHAN:[%r] TYPE:[%r]" % (chan, type))
                 if chan.qos.can_consume():
+                    print("CAN CONSUME")
                     return chan.handlers[type](), self
             elif event & eventio.POLL_HUP:
+                print("POLL HUP")
                 chan, type = self._fd_to_chan[fileno]
                 chan._poll_error(type)
                 break
@@ -210,15 +215,19 @@ class Channel(virtual.Channel):
     def _brpop_read(self, **options):
         try:
             try:
+                print("    +PARSE BRPOP RESPONSE")
                 dest__item = self.client.parse_response(self.client.connection,
                                                         "BRPOP",
                                                         **options)
-            except self.connection.connection_errors:
+                print("    -PARSE BRPOP RESPONSE")
+            except self.connection.connection_errors, exc:
+                print("    PARSE BRPOP RESPONSE ERROR: %r" % (exc, ))
                 raise Empty()
             if dest__item:
                 dest, item = dest__item
                 return deserialize(item), dest
             else:
+                print("    BRPOP TIMED OUT")
                 raise Empty()
         finally:
             self._in_poll = False
