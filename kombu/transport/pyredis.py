@@ -209,11 +209,8 @@ class Channel(virtual.Channel):
         if not queues:
             return
         keys = list(queues) + [timeout or 0]
-        try:
-            self.client.connection.send_command("BRPOP", *keys)
-            self._in_poll = True
-        except self.connection.connection_errors:
-            self.client.connection.disconnect()
+        self.client.connection.send_command("BRPOP", *keys)
+        self._in_poll = True
 
     def _brpop_read(self, **options):
         try:
