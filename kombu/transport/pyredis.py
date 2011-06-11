@@ -209,8 +209,11 @@ class Channel(virtual.Channel):
         if not queues:
             return
         keys = list(queues) + [timeout or 0]
-        self.client.connection.send_command("BRPOP", *keys)
-        self._in_poll = True
+        try:
+            self.client.connection.send_command("BRPOP", *keys)
+            self._in_poll = True
+        except self.connection.connection_errors:
+            self.client.connection.disconnect()
 
     def _brpop_read(self, **options):
         try:
@@ -222,6 +225,7 @@ class Channel(virtual.Channel):
                 print("    -PARSE BRPOP RESPONSE")
             except self.connection.connection_errors, exc:
                 print("    PARSE BRPOP RESPONSE ERROR: %r" % (exc, ))
+                self.client.connection.disconnect()
                 raise Empty()
             if dest__item:
                 dest, item = dest__item
